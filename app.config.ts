@@ -1,14 +1,14 @@
 export default {
   expo: {
-    name: "PillKeeper",
-    slug: "pill-keeper",
+    name: "Astronia",
+    slug: "astronia",
     version: "1.1.0",
     sdkVersion: "52.0.0",
     platforms: ["ios", "android"],
     newArchEnabled: true,
     ios: {
       supportsTablet: true,
-      bundleIdentifier: "com.pillkeeper.app",
+      bundleIdentifier: "com.astronia.app",
       buildNumber: "2",
       splash: {
         image: "./assets/splash.png",
@@ -18,7 +18,7 @@ export default {
       },
     },
     android: {
-      package: "com.pillkeeper.app",
+      package: "com.astronia.app",
       adaptiveIcon: {
         foregroundImage: "./assets/adaptive-icon.png",
         backgroundColor: "#FFFFFF",

@@ -8,6 +8,8 @@ import HomeScreen from "../screens/HomeScreen";
 import ContactScreen from "../screens/ContactScreen";
 import DirectoryScreen from "../screens/DirectoryScreen";
 import SelectedImagesScreen from "../screens/SelectedImagesScreen";
+import DoctorDirectoryScreen from "../screens/DoctorDirectoryScreen";
+import DoctorDetailsScreen from "../screens/DoctorDetailScreen";
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -58,6 +60,29 @@ const AppNavigator: React.FC = () => (
           headerTitleStyle: styles.headerTitleStyle,
           headerTitleAlign: "center",
           headerTintColor: "#fff",
+        }}
+      />
+      <Stack.Screen
+        name="DoctorDirectory"
+        component={DoctorDirectoryScreen}
+        options={{
+          title: "Doctor Directory",
+          headerStyle: styles.headerStyle,
+          headerTitleStyle: styles.headerTitleStyle,
+          headerTitleAlign: "center",
+          headerTintColor: "#fff",
+        }}
+      />
+      <Stack.Screen
+        name="DoctorDetails"
+        component={DoctorDetailsScreen}
+        options={{
+          title: "Doctor Details",
+          headerStyle: styles.headerStyle,
+          headerTitleStyle: styles.headerTitleStyle,
+          headerTitleAlign: "center",
+          headerTintColor: "#fff",
+          headerShown: false, // Hide the default header since we have a custom back button
         }}
       />
     </Stack.Navigator>
