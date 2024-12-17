@@ -55,7 +55,7 @@ const AppNavigator: React.FC = () => (
         name="Contact"
         component={ContactScreen}
         options={{
-          title: "Contact Us",
+          title: "Contact",
           headerStyle: styles.headerStyle,
           headerTitleStyle: styles.headerTitleStyle,
           headerTitleAlign: "center",

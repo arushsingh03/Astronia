@@ -57,7 +57,7 @@ const HomeScreen: React.FC = () => {
           style={styles.buttonSecondary}
           onPress={() => navigation.navigate("Contact")}
         >
-          <Text style={styles.buttonTextSecondary}>Contact Us</Text>
+          <Text style={styles.buttonTextSecondary}>Contact</Text>
         </TouchableOpacity>
       </View>
     </ImageBackground>

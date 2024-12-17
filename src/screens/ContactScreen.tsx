@@ -1,67 +1,47 @@
-import React, { useState } from "react";
+import React from "react";
 import {
   View,
   Text,
-  TextInput,
   StyleSheet,
   TouchableOpacity,
-  Alert,
   ImageBackground,
 } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 
 const ContactScreen: React.FC = () => {
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [message, setMessage] = useState("");
-
-  const handleSubmit = () => {
-    if (!name || !email || !message) {
-      Alert.alert("Please fill all fields");
-      return;
-    }
-
-    Alert.alert("Message Submitted");
-
-    setName("");
-    setEmail("");
-    setMessage("");
+  const contactDetails = {
+    phone: "+91 9918072158",
+    email: "rajvendra.singh.knp@gmail.com",
+    address: "Saket Nagar, Kanpur 208014, IN",
   };
 
   return (
     <ImageBackground
       source={{
-        uri: "https://plus.unsplash.com/premium_photo-1671721438260-1adb3749253f?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8OXx8bWVkaWNpbmV8ZW58MHx8MHx8fDA%3D",
+        uri: "https://images.unsplash.com/photo-1516826435551-36a8a09e4526?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTR8fG1lZGljaW5lfGVufDB8fDB8fHww",
       }}
       style={styles.container}
     >
       <View style={styles.overlay}>
-        <Text style={styles.title}>Contact Us</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Your Name"
-          placeholderTextColor="#888"
-          value={name}
-          onChangeText={setName}
-        />
-        <TextInput
-          style={styles.input}
-          placeholder="Your Email"
-          keyboardType="email-address"
-          placeholderTextColor="#888"
-          value={email}
-          onChangeText={setEmail}
-        />
-        <TextInput
-          style={[styles.input, styles.textArea]}
-          placeholder="Your Message"
-          multiline
-          numberOfLines={4}
-          placeholderTextColor="#888"
-          value={message}
-          onChangeText={setMessage}
-        />
-        <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
-          <Text style={styles.submitButtonText}>Submit</Text>
+        <Text style={styles.title}>Contact Information</Text>
+
+        <View style={styles.contactItem}>
+          <Ionicons name="call" size={24} color="#2563eb" />
+          <Text style={styles.contactText}>{contactDetails.phone}</Text>
+        </View>
+
+        <View style={styles.contactItem}>
+          <Ionicons name="mail" size={24} color="#2563eb" />
+          <Text style={styles.contactText}>{contactDetails.email}</Text>
+        </View>
+
+        <View style={styles.contactItem}>
+          <Ionicons name="location" size={24} color="#2563eb" />
+          <Text style={styles.contactText}>{contactDetails.address}</Text>
+        </View>
+
+        <TouchableOpacity style={styles.button}>
+          <Text style={styles.buttonText}>Get in Touch</Text>
         </TouchableOpacity>
       </View>
     </ImageBackground>
@@ -71,45 +51,42 @@ const ContactScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 20,
     justifyContent: "center",
-    backgroundColor: "rgba(0, 0, 0, 0.4)",
+    alignItems: "center",
   },
   overlay: {
-    backgroundColor: "rgba(0, 0, 0, 0.6)",
-    width: "100%",
-    padding: 20,
-    borderRadius: 10,
+    backgroundColor: "rgba(255, 255, 255, 0.7)",
+    width: "90%",
+    padding: 25,
+    borderRadius: 12,
+    alignItems: "center",
   },
   title: {
-    fontSize: 24,
+    fontSize: 28,
     fontWeight: "bold",
-    textAlign: "center",
+    color: "#020617",
     marginBottom: 30,
-    color: "#fff",
   },
-  input: {
-    height: 50,
-    borderColor: "#ddd",
-    borderWidth: 1,
-    borderRadius: 8,
-    marginBottom: 20,
-    paddingLeft: 15,
-    fontSize: 16,
-    backgroundColor: "#fff",
-  },
-  textArea: {
-    height: 120,
-    textAlignVertical: "top",
-  },
-  submitButton: {
-    backgroundColor: "#020617",
-    paddingVertical: 15,
-    borderRadius: 8,
+  contactItem: {
+    flexDirection: "row",
     alignItems: "center",
-    marginTop: 20,
+    marginBottom: 20,
+    textAlign: "center",
   },
-  submitButtonText: {
+  contactText: {
+    fontSize: 18,
+    color: "#020617",
+    marginLeft: 10,
+    fontWeight: "500",
+  },
+  button: {
+    marginTop: 20,
+    backgroundColor: "#2563eb",
+    paddingVertical: 12,
+    paddingHorizontal: 25,
+    borderRadius: 8,
+  },
+  buttonText: {
     color: "#fff",
     fontSize: 18,
     fontWeight: "bold",

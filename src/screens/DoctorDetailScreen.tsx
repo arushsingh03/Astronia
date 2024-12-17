@@ -2,24 +2,20 @@ import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
-  StyleSheet,
   Image,
   FlatList,
+  StyleSheet,
+  Modal,
   TouchableOpacity,
-  Alert,
-  ScrollView,
-  Linking,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { RootStackParamList, Doctor, Medicine } from "../navigation/types";
 import { RouteProp, useRoute, useNavigation } from "@react-navigation/native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const DoctorDetailsScreen: React.FC = () => {
   const route = useRoute<RouteProp<RootStackParamList, "DoctorDetails">>();
-  const navigation =
-    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const navigation = useNavigation();
 
   const { doctor } = route.params;
   const [selectedMedicines, setSelectedMedicines] = useState<Medicine[]>(
@@ -27,6 +23,10 @@ const DoctorDetailsScreen: React.FC = () => {
   );
   const [availableMedicines, setAvailableMedicines] = useState<Medicine[]>([]);
   const [showAssociatedOnly, setShowAssociatedOnly] = useState<boolean>(false);
+
+  const [isModalVisible, setIsModalVisible] = useState(false);
+  const [currentIndex, setCurrentIndex] = useState<number>(0);
+  const [rotation, setRotation] = useState<number>(0);
 
   useEffect(() => {
     loadMedicines();
@@ -43,116 +43,132 @@ const DoctorDetailsScreen: React.FC = () => {
     }
   };
 
-  const toggleMedicineSelection = (medicine: Medicine) => {
-    const isSelected = selectedMedicines.some((m) => m.id === medicine.id);
+  const openModal = (index: number) => {
+    setCurrentIndex(index);
+    setRotation(0);
+    setIsModalVisible(true);
+  };
 
-    if (isSelected) {
-      setSelectedMedicines((prev) => prev.filter((m) => m.id !== medicine.id));
-    } else {
-      setSelectedMedicines((prev) => [...prev, medicine]);
+  const goToPrevious = () => {
+    if (currentIndex > 0) {
+      setCurrentIndex(currentIndex - 1);
+      setRotation(0);
     }
   };
 
-  const saveMedicinesForDoctor = async () => {
-    try {
-      const storedDoctors = await AsyncStorage.getItem("doctors");
-      if (storedDoctors) {
-        const doctors: Doctor[] = JSON.parse(storedDoctors);
-
-        const updatedDoctors = doctors.map((d) =>
-          d.id === doctor.id ? { ...d, medicines: selectedMedicines } : d
-        );
-
-        await AsyncStorage.setItem("doctors", JSON.stringify(updatedDoctors));
-        Alert.alert("Success", "Associated medicines saved!");
-
-        setAvailableMedicines(selectedMedicines);
-        setShowAssociatedOnly(true);
-      }
-    } catch (error) {
-      console.error("Error saving medicines:", error);
-      Alert.alert("Error", "Failed to save medicines");
+  const goToNext = () => {
+    if (currentIndex < selectedMedicines.length - 1) {
+      setCurrentIndex(currentIndex + 1);
+      setRotation(0);
     }
   };
 
-  const renderMedicine = ({ item }: { item: Medicine }) => {
-    const isSelected = selectedMedicines.some((m) => m.id === item.id);
-
-    return (
-      <TouchableOpacity
-        style={[styles.medicineItem, isSelected && styles.selectedMedicineItem]}
-        onPress={() => toggleMedicineSelection(item)}
-      >
-        <Image source={{ uri: item.image }} style={styles.medicineThumbnail} />
-        <View style={styles.medicineDetails}>
-          <Text style={styles.medicineName}>{item.name}</Text>
-          <Text style={styles.medicineCategory}>{item.category}</Text>
-        </View>
-        {isSelected && (
-          <View style={styles.selectedOverlay}>
-            <Text style={styles.selectedText}>✓</Text>
-          </View>
-        )}
-      </TouchableOpacity>
-    );
+  const rotateImage = () => {
+    setRotation((prev) => prev + 90);
   };
 
   return (
     <View style={styles.container}>
-      <ScrollView>
-        {/* Doctor Profile Section */}
-        <View style={styles.profileContainer}>
+      {/* Doctor Profile Section */}
+      <View style={styles.profileContainer}>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => navigation.goBack()}
+        >
+          <Ionicons name="arrow-back" size={24} color="black" />
+        </TouchableOpacity>
+        <Image source={{ uri: doctor.image }} style={styles.doctorImage} />
+        <Text style={styles.doctorName}>{doctor.name}</Text>
+        <Text style={styles.doctorSpecialty}>{doctor.specialty}</Text>
+      </View>
+
+      {/* Medicines Section */}
+      <View style={styles.medicinesSection}>
+        <Text style={styles.sectionTitle}>
+          {showAssociatedOnly
+            ? "Associated Medicines"
+            : "Select Medicines to Associate"}
+        </Text>
+
+        <FlatList
+          data={availableMedicines}
+          keyExtractor={(item) => item.id}
+          numColumns={3}
+          renderItem={({ item, index }) => (
+            <TouchableOpacity
+              style={styles.medicineItem}
+              onPress={() => openModal(index)} // Open image modal
+            >
+              <Image
+                source={{ uri: item.image }}
+                style={styles.medicineThumbnail}
+                resizeMode="cover"
+              />
+              <Text style={styles.medicineName}>{item.name}</Text>
+            </TouchableOpacity>
+          )}
+        />
+      </View>
+
+      {/* Modal for Viewing and Rotating Image */}
+      <Modal
+        visible={isModalVisible}
+        transparent={false}
+        animationType="fade"
+        onRequestClose={() => setIsModalVisible(false)}
+      >
+        <View style={styles.modalContainer}>
           <TouchableOpacity
-            style={styles.backButton}
-            onPress={() => navigation.goBack()}
+            style={styles.closeIcon}
+            onPress={() => setIsModalVisible(false)}
           >
-            <Ionicons name="arrow-back" size={24} color="black" />
+            <Ionicons name="close-circle" size={35} color="#fff" />
           </TouchableOpacity>
 
-          <Image source={{ uri: doctor.image }} style={styles.doctorImage} />
-          <Text style={styles.doctorName}>{doctor.name}</Text>
-          <Text style={styles.doctorSpecialty}>{doctor.specialty}</Text>
+          {/* Image with Rotation */}
+          <Image
+            source={{ uri: selectedMedicines[currentIndex].image }}
+            style={[
+              styles.modalImage,
+              { transform: [{ rotate: `${rotation}deg` }] },
+            ]}
+            resizeMode="contain"
+          />
+          <Text style={styles.modalText}>
+            {selectedMedicines[currentIndex].name}
+          </Text>
 
-          <View style={styles.contactActions}>
+          {/* Bottom Navigation for Previous, Rotate, and Next */}
+          <View style={styles.buttonContainer}>
             <TouchableOpacity
-              style={styles.contactButton}
-              onPress={() => Linking.openURL(`tel:${doctor.phoneNumber}`)}
+              onPress={goToPrevious}
+              disabled={currentIndex === 0}
+              style={[
+                styles.navButton,
+                currentIndex === 0 && styles.disabledButton,
+              ]}
             >
-              <Ionicons name="call" size={20} color="white" />
-              <Text style={styles.contactButtonText}>Call</Text>
+              <Text style={styles.buttonText}>Previous</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity onPress={rotateImage} style={styles.navButton}>
+              <Ionicons name="refresh" size={20} color="#000" />
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={goToNext}
+              disabled={currentIndex === selectedMedicines.length - 1}
+              style={[
+                styles.navButton,
+                currentIndex === selectedMedicines.length - 1 &&
+                  styles.disabledButton,
+              ]}
+            >
+              <Text style={styles.buttonText}>Next</Text>
             </TouchableOpacity>
           </View>
         </View>
-
-        {/* Medicines Section */}
-        <View style={styles.medicinesSection}>
-          <Text style={styles.sectionTitle}>
-            {showAssociatedOnly
-              ? "Associated Medicines"
-              : "Select Medicines to Associate"}
-          </Text>
-
-          <FlatList
-            data={availableMedicines}
-            keyExtractor={(item) => item.id}
-            renderItem={renderMedicine}
-            ListEmptyComponent={
-              <Text style={styles.emptyText}>No medicines available</Text>
-            }
-          />
-
-          {!showAssociatedOnly && selectedMedicines.length > 0 && (
-            <TouchableOpacity
-              style={styles.saveButton}
-              onPress={saveMedicinesForDoctor}
-            >
-              <Text style={styles.saveButtonText}>
-                Save Associated Medicines ({selectedMedicines.length})
-              </Text>
-            </TouchableOpacity>
-          )}
-        </View>
-      </ScrollView>
+      </Modal>
     </View>
   );
 };
@@ -169,12 +185,6 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderColor: "#ddd",
   },
-  backButton: {
-    position: "absolute",
-    top: 10,
-    left: 10,
-    zIndex: 10,
-  },
   doctorImage: {
     width: 150,
     height: 150,
@@ -189,21 +199,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: "gray",
   },
-  contactActions: {
-    marginVertical: 10,
-  },
-  contactButton: {
-    backgroundColor: "#2563eb",
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 10,
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  contactButtonText: {
-    color: "#fff",
-    marginLeft: 5,
-  },
   medicinesSection: {
     padding: 15,
   },
@@ -213,65 +208,77 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   medicineItem: {
-    flexDirection: "row",
+    flexDirection: "column",
     alignItems: "center",
     backgroundColor: "#fff",
     marginVertical: 5,
     padding: 10,
     borderRadius: 10,
     elevation: 2,
-  },
-  selectedMedicineItem: {
-    borderWidth: 2,
-    borderColor: "#2563eb",
+    width: "30%",
   },
   medicineThumbnail: {
-    width: 60,
-    height: 60,
-    marginRight: 10,
+    width: 100,
+    height: 100,
     borderRadius: 10,
-  },
-  medicineDetails: {
-    flex: 1,
   },
   medicineName: {
-    fontSize: 16,
-    fontWeight: "bold",
-  },
-  medicineCategory: {
     fontSize: 14,
-    color: "gray",
-  },
-  saveButton: {
-    backgroundColor: "#020617",
-    padding: 15,
-    borderRadius: 10,
-    alignItems: "center",
-    marginTop: 15,
-  },
-  saveButtonText: {
-    color: "#fff",
     fontWeight: "bold",
-  },
-  emptyText: {
     textAlign: "center",
-    color: "gray",
-    marginVertical: 20,
   },
-  selectedOverlay: {
-    position: "absolute",
-    top: 0,
-    right: 0,
-    bottom: 0,
-    left: 0,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
+  modalContainer: {
+    flex: 1,
     justifyContent: "center",
     alignItems: "center",
+    backgroundColor: "rgba(0,0,0,0.9)",
   },
-  selectedText: {
-    fontSize: 20,
-    color: "#2563eb",
+  closeIcon: {
+    position: "absolute",
+    top: 40,
+    right: 20,
+    zIndex: 1,
   },
+  modalImage: {
+    width: "100%",
+    height: "80%",
+    borderRadius: 10,
+  },
+  modalText: {
+    fontSize: 22,
+    fontWeight: "bold",
+    color: "#fff",
+    textAlign: "center",
+    marginBottom: 20,
+  },
+  buttonContainer: {
+    position: "absolute",
+    bottom: 30,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    width: "100%",
+    paddingHorizontal: 20,
+  },
+  navButton: {
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    backgroundColor: "#fff",
+    borderRadius: 8,
+    alignItems: "center",
+  },
+  disabledButton: {
+    backgroundColor: "#9ca3af",
+  },
+  buttonText: {
+    color: "#020617",
+    fontWeight: "600",
+  },
+  backButton: {
+    position: "absolute",
+    top: 10,
+    left: 20,
+    zIndex: 1,
+  }
 });
 
 export default DoctorDetailsScreen;

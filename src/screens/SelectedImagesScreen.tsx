@@ -8,6 +8,7 @@ import {
   Modal,
   TouchableOpacity,
 } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { SelectedImagesScreenProps } from "../navigation/types";
 
 const SelectedImagesScreen: React.FC<SelectedImagesScreenProps> = ({
@@ -17,22 +18,30 @@ const SelectedImagesScreen: React.FC<SelectedImagesScreenProps> = ({
 
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [currentIndex, setCurrentIndex] = useState<number>(0);
+  const [rotation, setRotation] = useState<number>(0);
 
   const openModal = (index: number) => {
     setCurrentIndex(index);
+    setRotation(0);
     setIsModalVisible(true);
   };
 
   const goToPrevious = () => {
     if (currentIndex > 0) {
       setCurrentIndex(currentIndex - 1);
+      setRotation(0);
     }
   };
 
   const goToNext = () => {
     if (currentIndex < selectedMedicines.length - 1) {
       setCurrentIndex(currentIndex + 1);
+      setRotation(0);
     }
+  };
+
+  const rotateImage = () => {
+    setRotation((prev) => prev + 90);
   };
 
   return (
@@ -60,20 +69,33 @@ const SelectedImagesScreen: React.FC<SelectedImagesScreenProps> = ({
       {/* Modal for viewing images */}
       <Modal
         visible={isModalVisible}
-        transparent={false} // Full-screen modal
+        transparent={false}
         animationType="fade"
         onRequestClose={() => setIsModalVisible(false)}
       >
         <View style={styles.modalContainer}>
+          {/* Close Icon */}
+          <TouchableOpacity
+            style={styles.closeIcon}
+            onPress={() => setIsModalVisible(false)}
+          >
+            <Ionicons name="close-circle" size={35} color="#fff" />
+          </TouchableOpacity>
+
+          {/* Image with Rotation */}
           <Image
             source={{ uri: selectedMedicines[currentIndex].image }}
-            style={styles.modalImage}
-            resizeMode="contain" 
+            style={[
+              styles.modalImage,
+              { transform: [{ rotate: `${rotation}deg` }] },
+            ]}
+            resizeMode="contain"
           />
           <Text style={styles.modalText}>
             {selectedMedicines[currentIndex].name}
           </Text>
 
+          {/* Bottom Button Container */}
           <View style={styles.buttonContainer}>
             <TouchableOpacity
               onPress={goToPrevious}
@@ -86,8 +108,9 @@ const SelectedImagesScreen: React.FC<SelectedImagesScreenProps> = ({
               <Text style={styles.buttonText}>Previous</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity onPress={() => setIsModalVisible(false)}>
-              <Text style={styles.closeText}>Close</Text>
+            {/* Rotate Button */}
+            <TouchableOpacity onPress={rotateImage} style={styles.navButton}>
+              <Ionicons name="refresh" size={20} color="#000" />
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -143,12 +166,18 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "rgba(0,0,0,0.9)", 
+    backgroundColor: "rgba(0,0,0,0.9)",
     padding: 20,
+  },
+  closeIcon: {
+    position: "absolute",
+    top: 40,
+    right: 20,
+    zIndex: 1,
   },
   modalImage: {
     width: "100%",
-    height: "80%", 
+    height: "80%",
     borderRadius: 10,
   },
   modalText: {
@@ -171,6 +200,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     backgroundColor: "#fff",
     borderRadius: 8,
+    alignItems: "center",
   },
   disabledButton: {
     backgroundColor: "#9ca3af",
@@ -178,13 +208,6 @@ const styles = StyleSheet.create({
   buttonText: {
     color: "#020617",
     fontWeight: "600",
-  },
-  closeText: {
-    fontSize: 18,
-    color: "#ff4d4d",
-    fontWeight: "600",
-    textAlign: "center",
-    marginHorizontal: 25,
   },
 });
 
