@@ -10,7 +10,6 @@ import {
 } from "react-native";
 
 const ContactScreen: React.FC = () => {
-  // State for form fields
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
@@ -21,10 +20,8 @@ const ContactScreen: React.FC = () => {
       return;
     }
 
-    // Handle the submission logic here, for now, we're just alerting
     Alert.alert("Message Submitted");
 
-    // Reset fields after submission
     setName("");
     setEmail("");
     setMessage("");
