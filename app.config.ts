@@ -13,7 +13,7 @@ export default {
       splash: {
         image: "./assets/splash.png",
         resizeMode: "contain",
-        backgroundColor: "#4CAF50",
+        backgroundColor: "#FFFFFF",
         duration: 3000,
       },
     },
@@ -26,7 +26,7 @@ export default {
       splash: {
         image: "./assets/splash.png",
         resizeMode: "contain",
-        backgroundColor: "#4CAF50",
+        backgroundColor: "#FFFFFF",
         duration: 3000,
       },
       versionCode: 2,

@@ -284,8 +284,12 @@ const styles = StyleSheet.create({
   doctorImage: {
     width: "100%",
     height: 200,
+    alignItems: "center",
+    justifyContent: "center",
+    alignSelf: "center",
     borderRadius: 10,
     marginBottom: 10,
+    margin: 10,
   },
   doctorInfo: {
     paddingHorizontal: 10,
@@ -304,20 +308,25 @@ const styles = StyleSheet.create({
     marginTop: 5,
   },
   deleteButton: {
-    backgroundColor: "#f87171",
+    backgroundColor: "#0369a1",
     padding: 10,
     borderRadius: 8,
     marginTop: 10,
+    alignContent: "flex-end",
+    alignSelf: "flex-end",
     alignItems: "center",
   },
   deleteButtonText: { color: "#fff", fontWeight: "bold" },
   emptyContainer: {
     flex: 1,
-    justifyContent: "center",
+    alignSelf: "center",
     alignItems: "center",
     marginTop: 50,
   },
-  emptyText: { fontSize: 18, color: "gray" },
+  emptyText: {
+    fontSize: 18,
+    color: "gray",
+  },
   modalContainer: {
     flex: 1,
     justifyContent: "center",
@@ -330,6 +339,7 @@ const styles = StyleSheet.create({
     padding: 20,
     width: "90%",
     maxHeight: "90%",
+    alignSelf: "center",
   },
   modalTitle: {
     fontSize: 18,
