@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -7,12 +7,31 @@ import {
   ImageBackground,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import * as Linking from "expo-linking";
 
 const ContactScreen: React.FC = () => {
+  const [showOptions, setShowOptions] = useState(false);
+
   const contactDetails = {
     phone: "+91 9918072158",
     email: "rajvendra.singh.knp@gmail.com",
     address: "Saket Nagar, Kanpur 208014, IN",
+  };
+
+  const handleCall = () => {
+    Linking.openURL(`tel:${contactDetails.phone}`).catch((err) =>
+      console.error("Error opening dialer", err)
+    );
+  };
+
+  const handleEmail = () => {
+    Linking.openURL(`mailto:${contactDetails.email}`).catch((err) =>
+      console.error("Error opening email app", err)
+    );
+  };
+
+  const handleGetInTouchPress = () => {
+    setShowOptions(!showOptions);
   };
 
   return (
@@ -40,9 +59,24 @@ const ContactScreen: React.FC = () => {
           <Text style={styles.contactText}>{contactDetails.address}</Text>
         </View>
 
-        <TouchableOpacity style={styles.button}>
+        {/* Toggle button for call/mail options */}
+        <TouchableOpacity style={styles.button} onPress={handleGetInTouchPress}>
           <Text style={styles.buttonText}>Get in Touch</Text>
         </TouchableOpacity>
+
+        {showOptions && (
+          <View style={styles.optionsContainer}>
+            <TouchableOpacity style={styles.optionButton} onPress={handleCall}>
+              <Ionicons name="call" size={24} color="#fff" />
+              <Text style={styles.optionText}>Call</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.optionButton} onPress={handleEmail}>
+              <Ionicons name="mail" size={24} color="#fff" />
+              <Text style={styles.optionText}>Email</Text>
+            </TouchableOpacity>
+          </View>
+        )}
       </View>
     </ImageBackground>
   );
@@ -90,6 +124,31 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontSize: 18,
     fontWeight: "bold",
+  },
+  optionsContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    width: "auto",
+    marginTop: 20,
+    alignSelf: "center",
+  },
+  optionButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 10,
+    paddingHorizontal: 25,
+    backgroundColor: "#4b9cf6",
+    borderRadius: 8,
+    alignSelf: "center",
+    justifyContent: "center",
+    marginHorizontal: 10,
+    flex: 1,
+  },
+  optionText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "bold",
+    marginLeft: 10,
   },
 });
 
