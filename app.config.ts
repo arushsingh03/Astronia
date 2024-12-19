@@ -2,14 +2,14 @@ export default {
   expo: {
     name: "Astronia",
     slug: "pill-keeper",
-    version: "1.1.0",
+    version: "1.2.0",
     sdkVersion: "52.0.0",
     platforms: ["ios", "android"],
     newArchEnabled: true,
     ios: {
       supportsTablet: true,
       bundleIdentifier: "com.astronia.app",
-      buildNumber: "2",
+      buildNumber: "3",
       splash: {
         image: "./assets/splash.png",
         resizeMode: "contain",
@@ -29,7 +29,7 @@ export default {
         backgroundColor: "#FFFFFF",
         duration: 3000,
       },
-      versionCode: 2,
+      versionCode: 3,
     },
     extra: {
       eas: {
