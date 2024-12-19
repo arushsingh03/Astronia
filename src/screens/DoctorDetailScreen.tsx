@@ -23,12 +23,12 @@ const DoctorDetailsScreen: React.FC<{ route: any; navigation: any }> = ({
   const [availableMedicines, setAvailableMedicines] = useState<Medicine[]>([]);
   const [filteredMedicines, setFilteredMedicines] = useState<Medicine[]>([]);
   const [searchQuery, setSearchQuery] = useState<string>("");
-  const [showAssociatedOnly, setShowAssociatedOnly] = useState<boolean>(true);
   const [selectionMode, setSelectionMode] = useState<boolean>(false);
   const [tempSelection, setTempSelection] = useState<Set<string>>(new Set());
   const [isModalVisible, setIsModalVisible] = useState<boolean>(false);
   const [currentIndex, setCurrentIndex] = useState<number>(0);
   const [rotation, setRotation] = useState<number>(0);
+  const [showAllImages, setShowAllImages] = useState<boolean>(true); // Set to true initially
 
   useEffect(() => {
     loadMedicines();
@@ -36,12 +36,13 @@ const DoctorDetailsScreen: React.FC<{ route: any; navigation: any }> = ({
 
   useEffect(() => {
     filterMedicines();
-  }, [searchQuery, availableMedicines, selectedMedicines, showAssociatedOnly]);
+  }, [searchQuery, availableMedicines, showAllImages]);
+
   useEffect(() => {
     if (filteredMedicines.length === 0) {
-      setCurrentIndex(0); // Reset index if no medicines are available
+      setCurrentIndex(0);
     } else if (currentIndex >= filteredMedicines.length) {
-      setCurrentIndex(filteredMedicines.length - 1); // Adjust index to last valid item
+      setCurrentIndex(filteredMedicines.length - 1);
     }
   }, [filteredMedicines]);
 
@@ -51,18 +52,38 @@ const DoctorDetailsScreen: React.FC<{ route: any; navigation: any }> = ({
       const storedSelected = await AsyncStorage.getItem(
         `selectedMedicines_${doctor.id}`
       );
+      const storedTempSelection = await AsyncStorage.getItem(
+        `tempSelection_${doctor.id}`
+      );
 
       if (storedMedicines) {
         const parsedMedicines = JSON.parse(storedMedicines);
         setAvailableMedicines(parsedMedicines);
+      }
 
-        if (storedSelected) {
-          const parsedSelected = JSON.parse(storedSelected);
-          setSelectedMedicines(parsedSelected);
-        }
+      if (storedSelected) {
+        const parsedSelected = JSON.parse(storedSelected);
+        setSelectedMedicines(parsedSelected);
+        setFilteredMedicines(parsedSelected); // Initially show selected medicines
+      }
+
+      if (storedTempSelection) {
+        const parsedTempSelection = JSON.parse(storedTempSelection);
+        setTempSelection(new Set(parsedTempSelection));
       }
     } catch (error) {
       console.error("Error loading medicines:", error);
+    }
+  };
+
+  const saveTempSelection = async (selection: Set<string>) => {
+    try {
+      await AsyncStorage.setItem(
+        `tempSelection_${doctor.id}`,
+        JSON.stringify(Array.from(selection))
+      );
+    } catch (error) {
+      console.error("Error saving temp selection:", error);
     }
   };
 
@@ -79,17 +100,24 @@ const DoctorDetailsScreen: React.FC<{ route: any; navigation: any }> = ({
 
   const filterMedicines = () => {
     const lowerQuery = searchQuery.toLowerCase();
-    const medicinesToFilter = showAssociatedOnly
-      ? selectedMedicines
-      : availableMedicines;
+    let medicinesSource =
+      showAllImages || selectionMode ? availableMedicines : selectedMedicines;
 
-    const filtered = medicinesToFilter.filter((medicine) =>
+    const filtered = medicinesSource.filter((medicine) =>
       medicine.name.toLowerCase().includes(lowerQuery)
     );
     setFilteredMedicines(filtered);
   };
 
-  const toggleTempSelection = (medicineId: string) => {
+  const toggleMedicineSelection = (medicineId: string) => {
+    if (!selectionMode) {
+      const medicineIndex = filteredMedicines.findIndex(
+        (m) => m.id === medicineId
+      );
+      handleMedicineView(medicineIndex);
+      return;
+    }
+
     setTempSelection((prev) => {
       const newSelection = new Set(prev);
       if (newSelection.has(medicineId)) {
@@ -97,47 +125,58 @@ const DoctorDetailsScreen: React.FC<{ route: any; navigation: any }> = ({
       } else {
         newSelection.add(medicineId);
       }
+      saveTempSelection(newSelection);
       return newSelection;
     });
+  };
+
+  const handleMedicineView = (medicineIndex: number) => {
+    setCurrentIndex(medicineIndex);
+    setRotation(0);
+    setIsModalVisible(true);
+  };
+
+  const selectAll = () => {
+    const newSelection = new Set(
+      filteredMedicines.map((medicine) => medicine.id)
+    );
+    setTempSelection(newSelection);
+    saveTempSelection(newSelection);
+  };
+
+  const deselectAll = () => {
+    setTempSelection(new Set());
+    saveTempSelection(new Set());
   };
 
   const confirmSelection = () => {
     const newSelectedMedicines = availableMedicines.filter((medicine) =>
       tempSelection.has(medicine.id)
     );
-    const updatedSelected = [...newSelectedMedicines];
-
-    setSelectedMedicines(updatedSelected);
-    saveSelectedMedicines(updatedSelected);
-
-    setTempSelection(new Set());
+    setSelectedMedicines(newSelectedMedicines);
+    saveSelectedMedicines(newSelectedMedicines);
     setSelectionMode(false);
-    setShowAssociatedOnly(true);
-
-    Alert.alert("Selection Updated", "Your selections have been updated.");
+    setShowAllImages(false);
+    setFilteredMedicines(newSelectedMedicines); // Show only selected medicines after confirmation
+    Alert.alert("Success", "Medicine associations updated successfully");
   };
 
-  const handleMedicinePress = (medicineIndex: number) => {
-    setCurrentIndex(medicineIndex);
-    setRotation(0);
-    setIsModalVisible(true);
-  };
-
-  const handleMedicineLongPress = (medicine: Medicine) => {
-    setSelectionMode(true);
-    toggleTempSelection(medicine.id);
-    Alert.alert("Selection Mode", "You can now select or deselect medicines.");
-  };
-
-  const isMedicineSelected = (medicineId: string) => {
-    return (
-      tempSelection.has(medicineId) ||
-      selectedMedicines.some((medicine) => medicine.id === medicineId)
-    );
-  };
-
-  const isMedicineDeselected = (medicineId: string) => {
-    return selectionMode && !isMedicineSelected(medicineId);
+  const toggleSelectionMode = () => {
+    if (!selectionMode) {
+      // Entering selection mode
+      setTempSelection(
+        new Set(selectedMedicines.map((medicine) => medicine.id))
+      );
+      setShowAllImages(true); // Show all medicines when entering selection mode
+    } else {
+      // Exiting selection mode without confirming
+      setShowAllImages(false); // Return to showing only selected medicines
+      setTempSelection(
+        new Set(selectedMedicines.map((medicine) => medicine.id))
+      );
+    }
+    setSelectionMode(!selectionMode);
+    filterMedicines();
   };
 
   const goToPrevious = () => {
@@ -160,7 +199,6 @@ const DoctorDetailsScreen: React.FC<{ route: any; navigation: any }> = ({
 
   return (
     <View style={styles.container}>
-      {/* Doctor Profile */}
       <View style={styles.profileContainer}>
         <TouchableOpacity
           style={styles.backButton}
@@ -173,65 +211,91 @@ const DoctorDetailsScreen: React.FC<{ route: any; navigation: any }> = ({
         <Text style={styles.doctorSpecialty}>{doctor.specialty}</Text>
       </View>
 
-      {/* Search Bar */}
-      <TextInput
-        style={styles.searchInput}
-        placeholder="Search medicines..."
-        value={searchQuery}
-        onChangeText={setSearchQuery}
-      />
+      <View style={styles.controlsContainer}>
+        <TextInput
+          style={styles.searchInput}
+          placeholder="Search medicines..."
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+        />
 
-      {/* Medicines List */}
-      <View style={styles.medicinesSection}>
-        <Text style={styles.sectionTitle}>
-          {showAssociatedOnly
-            ? "Associated Medicines"
-            : "All Available Medicines"}
-        </Text>
-        <TouchableOpacity
-          onPress={() => setShowAssociatedOnly((prev) => !prev)}
-          style={styles.toggleButton}
-        >
-          <Text style={styles.toggleButtonText}>
-            {showAssociatedOnly ? "Show All Medicines" : "Show Associated Only"}
-          </Text>
-        </TouchableOpacity>
+        <View style={styles.buttonRow}>
+          <TouchableOpacity
+            onPress={() => {
+              setShowAllImages(!showAllImages);
+              filterMedicines();
+            }}
+            style={[styles.actionButton, showAllImages && styles.activeButton]}
+          >
+            <Text style={styles.buttonText}>
+              {showAllImages ? "Show Selected" : "Show All"}
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            onPress={toggleSelectionMode}
+            style={[styles.filterButton, selectionMode && styles.activeButton]}
+          >
+            <Ionicons name="filter" size={24} color="#fff" />
+          </TouchableOpacity>
+        </View>
 
         {selectionMode && (
-          <TouchableOpacity
-            onPress={confirmSelection}
-            style={[styles.toggleButton, styles.confirmButton]}
-          >
-            <Text style={styles.toggleButtonText}>Confirm Selection</Text>
-          </TouchableOpacity>
-        )}
-
-        <FlatList
-          data={filteredMedicines}
-          keyExtractor={(item) => item.id}
-          numColumns={3}
-          renderItem={({ item, index }) => (
+          <View style={styles.selectionControls}>
             <TouchableOpacity
-              style={[
-                styles.medicineItem,
-                isMedicineSelected(item.id) && styles.selectedMedicineItem,
-                isMedicineDeselected(item.id) && styles.deselectedMedicineItem,
-              ]}
-              onPress={() => handleMedicinePress(index)}
-              onLongPress={() => handleMedicineLongPress(item)}
+              onPress={selectAll}
+              style={styles.selectionButton}
             >
-              <Image
-                source={{ uri: item.image }}
-                style={styles.medicineThumbnail}
-                resizeMode="cover"
-              />
-              <Text style={styles.medicineName}>{item.name}</Text>
+              <Text style={styles.buttonText}>Select All</Text>
             </TouchableOpacity>
-          )}
-        />
+            <TouchableOpacity
+              onPress={deselectAll}
+              style={styles.deselectButton}
+            >
+              <Text style={styles.buttonText}>Deselect All</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={confirmSelection}
+              style={styles.confirmButton}
+            >
+              <Text style={styles.buttonText}>Confirm</Text>
+            </TouchableOpacity>
+          </View>
+        )}
       </View>
 
-      {/* Modal for Viewing Images */}
+      <FlatList
+        data={filteredMedicines}
+        keyExtractor={(item) => item.id}
+        numColumns={3}
+        renderItem={({ item }) => (
+          <TouchableOpacity
+            style={[
+              styles.medicineItem,
+              selectionMode &&
+                tempSelection.has(item.id) &&
+                styles.selectedMedicineItem,
+              !selectionMode &&
+                selectedMedicines.some((m) => m.id === item.id) &&
+                styles.associatedMedicineItem,
+            ]}
+            onPress={() => toggleMedicineSelection(item.id)}
+          >
+            <Image
+              source={{ uri: item.image }}
+              style={styles.medicineThumbnail}
+              resizeMode="cover"
+            />
+            <Text style={styles.medicineName}>{item.name}</Text>
+            {selectionMode && tempSelection.has(item.id) && (
+              <View style={styles.selectedOverlay}>
+                <Ionicons name="checkmark-circle" size={24} color="#28a745" />
+              </View>
+            )}
+          </TouchableOpacity>
+        )}
+      />
+
       <Modal
         visible={isModalVisible}
         transparent={false}
@@ -246,10 +310,10 @@ const DoctorDetailsScreen: React.FC<{ route: any; navigation: any }> = ({
             <Ionicons name="close-circle" size={35} color="#fff" />
           </TouchableOpacity>
 
-          {filteredMedicines[currentIndex] ? (
+          {filteredMedicines[currentIndex] && (
             <>
               <Image
-                source={{ uri: filteredMedicines[currentIndex]?.image }}
+                source={{ uri: filteredMedicines[currentIndex].image }}
                 style={[
                   styles.modalImage,
                   { transform: [{ rotate: `${rotation}deg` }] },
@@ -257,7 +321,7 @@ const DoctorDetailsScreen: React.FC<{ route: any; navigation: any }> = ({
                 resizeMode="contain"
               />
               <Text style={styles.modalText}>
-                {filteredMedicines[currentIndex]?.name}
+                {filteredMedicines[currentIndex].name}
               </Text>
               <View style={styles.buttonContainer}>
                 <TouchableOpacity
@@ -268,7 +332,7 @@ const DoctorDetailsScreen: React.FC<{ route: any; navigation: any }> = ({
                     currentIndex === 0 && styles.disabledButton,
                   ]}
                 >
-                  <Text style={styles.buttonText}>Previous</Text>
+                  <Text style={styles.navButtonText}>Previous</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   onPress={rotateImage}
@@ -285,12 +349,10 @@ const DoctorDetailsScreen: React.FC<{ route: any; navigation: any }> = ({
                       styles.disabledButton,
                   ]}
                 >
-                  <Text style={styles.buttonText}>Next</Text>
+                  <Text style={styles.navButtonText}>Next</Text>
                 </TouchableOpacity>
               </View>
             </>
-          ) : (
-            <Text style={styles.errorMessage}>No image to display</Text>
           )}
         </View>
       </Modal>
@@ -299,59 +361,28 @@ const DoctorDetailsScreen: React.FC<{ route: any; navigation: any }> = ({
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
-  medicineItem: { margin: 5, alignItems: "center" },
-  selectedMedicineItem: {
-    borderWidth: 2,
-    borderColor: "#4CAF50",
-    opacity: 0.8, // Makes it visually distinct
+  container: {
+    flex: 1,
+    backgroundColor: "#f5f5f5",
   },
-  errorMessage: {
-    fontSize: 18,
-    color: "#fff",
-    textAlign: "center",
-    marginTop: 20,
-  },
-  deselectedMedicineItem: {
-    borderColor: "red",
-    borderWidth: 2,
-  },
-  medicineThumbnail: { width: 80, height: 80 },
-  medicineName: { textAlign: "center" },
-  confirmButton: { backgroundColor: "#020617", padding: 10 },
-
-  searchInput: {
-    height: 40,
-    borderColor: "#ccc",
-    borderWidth: 1,
-    borderRadius: 8,
-    marginBottom: 15,
-    paddingLeft: 10,
+  navButtonText: {
     fontSize: 16,
-    marginTop: 15,
-    width: "95%",
-    alignSelf: "center",
-  },
-  toggleButton: {
-    backgroundColor: "#020617",
-    padding: 10,
-    borderRadius: 5,
-    alignItems: "center",
-    marginVertical: 10,
-  },
-  toggleButtonText: {
-    color: "#fff",
-    fontWeight: "bold",
-  },
-  exitSelectionButton: {
-    backgroundColor: "#f44336",
+    fontWeight: "500",
+    color: "#333333",
+    textAlign: "center",
   },
   profileContainer: {
     alignItems: "center",
     backgroundColor: "#fff",
     paddingVertical: 20,
     borderBottomWidth: 1,
-    borderColor: "#ddd",
+    borderBottomColor: "#ddd",
+  },
+  backButton: {
+    position: "absolute",
+    top: 10,
+    left: 20,
+    zIndex: 1,
   },
   doctorImage: {
     width: 150,
@@ -366,6 +397,119 @@ const styles = StyleSheet.create({
   doctorSpecialty: {
     fontSize: 16,
     color: "gray",
+  },
+  controlsContainer: {
+    padding: 15,
+    backgroundColor: "#fff",
+    borderBottomWidth: 1,
+    borderBottomColor: "#ddd",
+  },
+  searchInput: {
+    height: 40,
+    borderColor: "#ddd",
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    backgroundColor: "#fff",
+  },
+  buttonRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginTop: 10,
+    gap: 10,
+  },
+  actionButton: {
+    flex: 1,
+    backgroundColor: "#020617",
+    padding: 12,
+    borderRadius: 8,
+    alignItems: "center",
+  },
+  activeButton: {
+    backgroundColor: "#0056b3",
+  },
+  filterButton: {
+    backgroundColor: "#020617",
+    padding: 12,
+    borderRadius: 8,
+    alignItems: "center",
+    justifyContent: "center",
+    width: 40,
+    height: 40,
+  },
+  selectionControls: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginTop: 10,
+    gap: 10,
+  },
+  selectionButton: {
+    flex: 1,
+    backgroundColor: "#020617",
+    padding: 12,
+    borderRadius: 8,
+    alignItems: "center",
+  },
+  deselectButton: {
+    backgroundColor: "#020617",
+    flex: 1,
+    padding: 12,
+    borderRadius: 8,
+    alignItems: "center",
+  },
+  confirmButton: {
+    flex: 1,
+    backgroundColor: "#28a745",
+    padding: 12,
+    borderRadius: 8,
+    alignItems: "center",
+  },
+  buttonText: {
+    color: "#fff",
+    fontWeight: "bold",
+    fontSize: 14,
+  },
+  medicineItem: {
+    flex: 1 / 3,
+    margin: 5,
+    padding: 5,
+    backgroundColor: "#fff",
+    borderRadius: 8,
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#ddd",
+  },
+  selectedMedicineItem: {
+    borderWidth: 1.5,
+    borderColor: "#28a745",
+  },
+  associatedMedicineItem: {
+    borderWidth: 1.5,
+    borderColor: "#020617",
+  },
+  medicineThumbnail: {
+    width: 80,
+    height: 80,
+    borderRadius: 8,
+  },
+  medicineName: {
+    textAlign: "center",
+    marginTop: 5,
+    fontSize: 12,
+  },
+  selectedOverlay: {
+    position: "absolute",
+    top: 5,
+    right: 5,
+    backgroundColor: "#fff",
+    borderRadius: 12,
+  },
+  toggleButtonText: {
+    color: "#fff",
+    fontWeight: "bold",
+  },
+  exitSelectionButton: {
+    backgroundColor: "#f44336",
   },
   medicinesSection: {
     padding: 15,
@@ -417,16 +561,6 @@ const styles = StyleSheet.create({
   },
   disabledButton: {
     backgroundColor: "#9ca3af",
-  },
-  buttonText: {
-    color: "#020617",
-    fontWeight: "600",
-  },
-  backButton: {
-    position: "absolute",
-    top: 10,
-    left: 20,
-    zIndex: 1,
   },
 });
 

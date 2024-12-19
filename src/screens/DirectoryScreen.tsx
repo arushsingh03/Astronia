@@ -161,7 +161,7 @@ const DirectoryScreen: React.FC = () => {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.screenTitle}>Pill Keeper</Text>
+      <Text style={styles.screenTitle}>Astronia</Text>
 
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
         <View style={{ flex: 1 }}>

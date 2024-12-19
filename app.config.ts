@@ -1,7 +1,7 @@
 export default {
   expo: {
     name: "Astronia",
-    slug: "astronia",
+    slug: "pill-keeper",
     version: "1.1.0",
     sdkVersion: "52.0.0",
     platforms: ["ios", "android"],

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import {
   View,
   Text,
@@ -10,8 +10,6 @@ import { Ionicons } from "@expo/vector-icons";
 import * as Linking from "expo-linking";
 
 const ContactScreen: React.FC = () => {
-  const [showOptions, setShowOptions] = useState(false);
-
   const contactDetails = {
     phone: "+91 9918072158",
     email: "rajvendra.singh.knp@gmail.com",
@@ -28,10 +26,6 @@ const ContactScreen: React.FC = () => {
     Linking.openURL(`mailto:${contactDetails.email}`).catch((err) =>
       console.error("Error opening email app", err)
     );
-  };
-
-  const handleGetInTouchPress = () => {
-    setShowOptions(!showOptions);
   };
 
   return (
@@ -59,24 +53,18 @@ const ContactScreen: React.FC = () => {
           <Text style={styles.contactText}>{contactDetails.address}</Text>
         </View>
 
-        {/* Toggle button for call/mail options */}
-        <TouchableOpacity style={styles.button} onPress={handleGetInTouchPress}>
-          <Text style={styles.buttonText}>Get in Touch</Text>
-        </TouchableOpacity>
+        {/* Call and Email Buttons */}
+        <View style={styles.optionsContainer}>
+          <TouchableOpacity style={styles.optionButton} onPress={handleCall}>
+            <Ionicons name="call" size={24} color="#fff" />
+            <Text style={styles.optionText}>Call</Text>
+          </TouchableOpacity>
 
-        {showOptions && (
-          <View style={styles.optionsContainer}>
-            <TouchableOpacity style={styles.optionButton} onPress={handleCall}>
-              <Ionicons name="call" size={24} color="#fff" />
-              <Text style={styles.optionText}>Call</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity style={styles.optionButton} onPress={handleEmail}>
-              <Ionicons name="mail" size={24} color="#fff" />
-              <Text style={styles.optionText}>Email</Text>
-            </TouchableOpacity>
-          </View>
-        )}
+          <TouchableOpacity style={styles.optionButton} onPress={handleEmail}>
+            <Ionicons name="mail" size={24} color="#fff" />
+            <Text style={styles.optionText}>Email</Text>
+          </TouchableOpacity>
+        </View>
       </View>
     </ImageBackground>
   );
@@ -112,18 +100,6 @@ const styles = StyleSheet.create({
     color: "#020617",
     marginLeft: 10,
     fontWeight: "500",
-  },
-  button: {
-    marginTop: 20,
-    backgroundColor: "#2563eb",
-    paddingVertical: 12,
-    paddingHorizontal: 25,
-    borderRadius: 8,
-  },
-  buttonText: {
-    color: "#fff",
-    fontSize: 18,
-    fontWeight: "bold",
   },
   optionsContainer: {
     flexDirection: "row",

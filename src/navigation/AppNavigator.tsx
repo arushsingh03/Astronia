@@ -22,7 +22,7 @@ const AppNavigator: React.FC = () => (
         name="Home"
         component={HomeScreen}
         options={{
-          title: "Home Page",
+          title: "Home",
           headerStyle: styles.headerStyle,
           headerTitleStyle: styles.headerTitleStyle,
           headerTitleAlign: "center",
@@ -44,7 +44,7 @@ const AppNavigator: React.FC = () => (
         name="SelectedImages"
         component={SelectedImagesScreen}
         options={{
-          title: "View Selected Images",
+          title: "View Selected Medicines",
           headerStyle: styles.headerStyle,
           headerTitleStyle: styles.headerTitleStyle,
           headerTitleAlign: "center",
