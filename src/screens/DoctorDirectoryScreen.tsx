@@ -12,24 +12,23 @@ import {
   TouchableWithoutFeedback,
   Keyboard,
   ScrollView,
+  Dimensions,
 } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { RootStackParamList, Doctor, Medicine } from "../navigation/types";
+import { RootStackParamList, Doctor } from "../navigation/types";
 
 const DoctorDirectoryScreen: React.FC = () => {
   const [doctors, setDoctors] = useState<Doctor[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [isModalVisible, setIsModalVisible] = useState(false);
 
-  // Form state
   const [doctorName, setDoctorName] = useState("");
   const [specialty, setSpecialty] = useState("");
   const [address, setAddress] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
-  const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
   const navigation =
     useNavigation<
@@ -57,6 +56,12 @@ const DoctorDirectoryScreen: React.FC = () => {
     } catch (error) {
       console.error("Error saving doctors:", error);
     }
+  };
+
+  const deleteDoctor = async (id: string) => {
+    const updatedDoctors = doctors.filter((doctor) => doctor.id !== id);
+    setDoctors(updatedDoctors);
+    saveDoctors(updatedDoctors);
   };
 
   const pickImage = async () => {
@@ -117,26 +122,26 @@ const DoctorDirectoryScreen: React.FC = () => {
     }
   };
 
-  const deleteDoctor = async (id: string) => {
-    const updatedDoctors = doctors.filter((doctor) => doctor.id !== id);
-    setDoctors(updatedDoctors);
-    saveDoctors(updatedDoctors);
-  };
-
   const filteredDoctors = doctors.filter((doctor) =>
     doctor.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const renderDoctor = ({ item }: { item: Doctor }) => (
     <TouchableOpacity
-      style={styles.itemContainer}
+      style={styles.gridItem}
       onPress={() => navigation.navigate("DoctorDetails", { doctor: item })}
     >
       <Image source={{ uri: item.image }} style={styles.doctorImage} />
       <View style={styles.doctorInfo}>
-        <Text style={styles.doctorName}>{item.name}</Text>
-        <Text style={styles.doctorSpecialty}>{item.specialty}</Text>
-        <Text style={styles.doctorContact}>{item.phoneNumber}</Text>
+        <Text style={styles.doctorName} numberOfLines={1}>
+          {item.name}
+        </Text>
+        <Text style={styles.doctorSpecialty} numberOfLines={1}>
+          {item.specialty}
+        </Text>
+        <Text style={styles.doctorContact} numberOfLines={1}>
+          {item.phoneNumber}
+        </Text>
       </View>
       <TouchableOpacity
         style={styles.deleteButton}
@@ -165,7 +170,7 @@ const DoctorDirectoryScreen: React.FC = () => {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.screenTitle}>Doctor Directory</Text>
+      <Text style={styles.screenTitle}>Doctor Profile</Text>
 
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
         <View style={{ flex: 1 }}>
@@ -187,6 +192,8 @@ const DoctorDirectoryScreen: React.FC = () => {
             data={filteredDoctors}
             keyExtractor={(item) => item.id}
             renderItem={renderDoctor}
+            numColumns={2}
+            columnWrapperStyle={styles.gridRow}
             ListEmptyComponent={
               <View style={styles.emptyContainer}>
                 <Text style={styles.emptyText}>No doctors added yet</Text>
@@ -250,8 +257,15 @@ const DoctorDirectoryScreen: React.FC = () => {
   );
 };
 
+const windowWidth = Dimensions.get("window").width;
+const itemWidth = (windowWidth - 30) / 2; // 30 accounts for padding and gap
+
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 10, backgroundColor: "#f8f8f8" },
+  container: {
+    flex: 1,
+    padding: 10,
+    backgroundColor: "#f8f8f8",
+  },
   screenTitle: {
     fontSize: 24,
     fontWeight: "bold",
@@ -272,54 +286,60 @@ const styles = StyleSheet.create({
     padding: 10,
     borderRadius: 8,
     alignItems: "center",
+    marginBottom: 15,
   },
-  addButtonText: { color: "#fff", fontWeight: "bold", fontSize: 16 },
-  itemContainer: {
+  addButtonText: {
+    color: "#fff",
+    fontWeight: "bold",
+    fontSize: 16,
+  },
+  gridRow: {
+    justifyContent: "space-between",
+    marginBottom: 10,
+  },
+  gridItem: {
+    width: itemWidth,
     backgroundColor: "#fff",
     borderRadius: 10,
-    marginBottom: 15,
     elevation: 3,
-    padding: 10,
+    padding: 8,
   },
   doctorImage: {
     width: "100%",
-    height: 200,
-    alignItems: "center",
-    justifyContent: "center",
-    alignSelf: "center",
+    height: 350,
     borderRadius: 10,
-    marginBottom: 10,
-    margin: 10,
+    marginBottom: 8,
   },
   doctorInfo: {
-    paddingHorizontal: 10,
+    paddingHorizontal: 5,
   },
   doctorName: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: "bold",
   },
   doctorSpecialty: {
     color: "gray",
-    fontSize: 16,
+    fontSize: 14,
   },
   doctorContact: {
     color: "#020617",
-    fontSize: 16,
-    marginTop: 5,
+    fontSize: 14,
+    marginTop: 3,
   },
   deleteButton: {
     backgroundColor: "#0369a1",
-    padding: 10,
-    borderRadius: 8,
-    marginTop: 10,
-    alignContent: "flex-end",
+    padding: 8,
+    borderRadius: 6,
+    marginTop: 8,
     alignSelf: "flex-end",
-    alignItems: "center",
   },
-  deleteButtonText: { color: "#fff", fontWeight: "bold" },
+  deleteButtonText: {
+    color: "#fff",
+    fontWeight: "bold",
+    fontSize: 12,
+  },
   emptyContainer: {
     flex: 1,
-    alignSelf: "center",
     alignItems: "center",
     marginTop: 50,
   },
@@ -361,8 +381,13 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginTop: 10,
   },
-  modalButtonText: { color: "#fff", fontWeight: "bold" },
-  cancelButton: { backgroundColor: "red" },
+  modalButtonText: {
+    color: "#fff",
+    fontWeight: "bold",
+  },
+  cancelButton: {
+    backgroundColor: "red",
+  },
 });
 
 export default DoctorDirectoryScreen;

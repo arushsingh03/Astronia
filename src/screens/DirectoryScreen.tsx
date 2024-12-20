@@ -13,10 +13,10 @@ import {
   Keyboard,
 } from "react-native";
 import * as ImagePicker from "expo-image-picker";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useNavigation } from "@react-navigation/native";
-import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { RootStackParamList, Medicine } from "../navigation/types";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
 const DirectoryScreen: React.FC = () => {
   const [medicines, setMedicines] = useState<Medicine[]>([]);
@@ -272,7 +272,7 @@ const styles = StyleSheet.create({
   },
   medicineImage: {
     width: "100%",
-    height: 150,
+    height: 350,
     borderTopLeftRadius: 10,
     borderTopRightRadius: 10,
   },
