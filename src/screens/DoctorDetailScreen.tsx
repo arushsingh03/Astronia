@@ -9,8 +9,14 @@ import {
   TouchableOpacity,
   TextInput,
   Alert,
+  Animated,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import {
+  PinchGestureHandler,
+  State,
+  GestureHandlerRootView,
+} from "react-native-gesture-handler";
 import { Medicine } from "../navigation/types";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
@@ -28,7 +34,8 @@ const DoctorDetailsScreen: React.FC<{ route: any; navigation: any }> = ({
   const [isModalVisible, setIsModalVisible] = useState<boolean>(false);
   const [currentIndex, setCurrentIndex] = useState<number>(0);
   const [rotation, setRotation] = useState<number>(0);
-  const [showAllImages, setShowAllImages] = useState<boolean>(true); // Set to true initially
+  const [showAllImages, setShowAllImages] = useState<boolean>(true);
+  const [scale] = useState(new Animated.Value(1));
 
   useEffect(() => {
     loadMedicines();
@@ -64,7 +71,7 @@ const DoctorDetailsScreen: React.FC<{ route: any; navigation: any }> = ({
       if (storedSelected) {
         const parsedSelected = JSON.parse(storedSelected);
         setSelectedMedicines(parsedSelected);
-        setFilteredMedicines(parsedSelected); // Initially show selected medicines
+        setFilteredMedicines(parsedSelected);
       }
 
       if (storedTempSelection) {
@@ -133,6 +140,7 @@ const DoctorDetailsScreen: React.FC<{ route: any; navigation: any }> = ({
   const handleMedicineView = (medicineIndex: number) => {
     setCurrentIndex(medicineIndex);
     setRotation(0);
+    scale.setValue(1);
     setIsModalVisible(true);
   };
 
@@ -157,20 +165,18 @@ const DoctorDetailsScreen: React.FC<{ route: any; navigation: any }> = ({
     saveSelectedMedicines(newSelectedMedicines);
     setSelectionMode(false);
     setShowAllImages(false);
-    setFilteredMedicines(newSelectedMedicines); // Show only selected medicines after confirmation
+    setFilteredMedicines(newSelectedMedicines);
     Alert.alert("Success", "Medicine associations updated successfully");
   };
 
   const toggleSelectionMode = () => {
     if (!selectionMode) {
-      // Entering selection mode
       setTempSelection(
         new Set(selectedMedicines.map((medicine) => medicine.id))
       );
-      setShowAllImages(true); // Show all medicines when entering selection mode
+      setShowAllImages(true);
     } else {
-      // Exiting selection mode without confirming
-      setShowAllImages(false); // Return to showing only selected medicines
+      setShowAllImages(false);
       setTempSelection(
         new Set(selectedMedicines.map((medicine) => medicine.id))
       );
@@ -183,6 +189,7 @@ const DoctorDetailsScreen: React.FC<{ route: any; navigation: any }> = ({
     if (currentIndex > 0) {
       setCurrentIndex(currentIndex - 1);
       setRotation(0);
+      scale.setValue(1);
     }
   };
 
@@ -190,12 +197,98 @@ const DoctorDetailsScreen: React.FC<{ route: any; navigation: any }> = ({
     if (currentIndex < filteredMedicines.length - 1) {
       setCurrentIndex(currentIndex + 1);
       setRotation(0);
+      scale.setValue(1);
     }
   };
 
   const rotateImage = () => {
     setRotation((prev) => prev + 90);
   };
+
+  const onPinchGestureEvent = Animated.event(
+    [{ nativeEvent: { scale: scale } }],
+    { useNativeDriver: true }
+  );
+
+  const onPinchHandlerStateChange = (event: any) => {
+    if (event.nativeEvent.oldState === State.ACTIVE) {
+      Animated.spring(scale, {
+        toValue: 1,
+        tension: 40,
+        friction: 7,
+        useNativeDriver: true,
+      }).start();
+    }
+  };
+
+  const renderModalContent = () => (
+    <GestureHandlerRootView style={styles.modalContainer}>
+      <TouchableOpacity
+        style={styles.closeIcon}
+        onPress={() => {
+          setIsModalVisible(false);
+          scale.setValue(1);
+        }}
+      >
+        <Ionicons name="close-circle" size={35} color="#fff" />
+      </TouchableOpacity>
+
+      {filteredMedicines[currentIndex] && (
+        <>
+          <PinchGestureHandler
+            onGestureEvent={onPinchGestureEvent}
+            onHandlerStateChange={onPinchHandlerStateChange}
+          >
+            <Animated.View style={styles.imageWrapper}>
+              <Animated.Image
+                source={{ uri: filteredMedicines[currentIndex].image }}
+                style={[
+                  styles.modalImage,
+                  {
+                    transform: [{ rotate: `${rotation}deg` }, { scale: scale }],
+                  },
+                ]}
+                resizeMode="contain"
+              />
+            </Animated.View>
+          </PinchGestureHandler>
+
+          <Text style={styles.modalText}>
+            {filteredMedicines[currentIndex].name}
+          </Text>
+
+          <View style={styles.buttonContainer}>
+            <TouchableOpacity
+              onPress={goToPrevious}
+              disabled={currentIndex === 0}
+              style={[
+                styles.navButton,
+                currentIndex === 0 && styles.disabledButton,
+              ]}
+            >
+              <Text style={styles.navButtonText}>Previous</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity onPress={rotateImage} style={styles.navButton}>
+              <Ionicons name="refresh" size={20} color="#000" />
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={goToNext}
+              disabled={currentIndex === filteredMedicines.length - 1}
+              style={[
+                styles.navButton,
+                currentIndex === filteredMedicines.length - 1 &&
+                  styles.disabledButton,
+              ]}
+            >
+              <Text style={styles.navButtonText}>Next</Text>
+            </TouchableOpacity>
+          </View>
+        </>
+      )}
+    </GestureHandlerRootView>
+  );
 
   return (
     <View style={styles.container}>
@@ -300,61 +393,12 @@ const DoctorDetailsScreen: React.FC<{ route: any; navigation: any }> = ({
         visible={isModalVisible}
         transparent={false}
         animationType="fade"
-        onRequestClose={() => setIsModalVisible(false)}
+        onRequestClose={() => {
+          setIsModalVisible(false);
+          scale.setValue(1);
+        }}
       >
-        <View style={styles.modalContainer}>
-          <TouchableOpacity
-            style={styles.closeIcon}
-            onPress={() => setIsModalVisible(false)}
-          >
-            <Ionicons name="close-circle" size={35} color="#fff" />
-          </TouchableOpacity>
-
-          {filteredMedicines[currentIndex] && (
-            <>
-              <Image
-                source={{ uri: filteredMedicines[currentIndex].image }}
-                style={[
-                  styles.modalImage,
-                  { transform: [{ rotate: `${rotation}deg` }] },
-                ]}
-                resizeMode="contain"
-              />
-              <Text style={styles.modalText}>
-                {filteredMedicines[currentIndex].name}
-              </Text>
-              <View style={styles.buttonContainer}>
-                <TouchableOpacity
-                  onPress={goToPrevious}
-                  disabled={currentIndex === 0}
-                  style={[
-                    styles.navButton,
-                    currentIndex === 0 && styles.disabledButton,
-                  ]}
-                >
-                  <Text style={styles.navButtonText}>Previous</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  onPress={rotateImage}
-                  style={styles.navButton}
-                >
-                  <Ionicons name="refresh" size={20} color="#000" />
-                </TouchableOpacity>
-                <TouchableOpacity
-                  onPress={goToNext}
-                  disabled={currentIndex === filteredMedicines.length - 1}
-                  style={[
-                    styles.navButton,
-                    currentIndex === filteredMedicines.length - 1 &&
-                      styles.disabledButton,
-                  ]}
-                >
-                  <Text style={styles.navButtonText}>Next</Text>
-                </TouchableOpacity>
-              </View>
-            </>
-          )}
-        </View>
+        {renderModalContent()}
       </Modal>
     </View>
   );
@@ -542,11 +586,11 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     color: "#fff",
     textAlign: "center",
-    marginBottom: 20,
+    marginBottom: 25,
   },
   buttonContainer: {
     position: "absolute",
-    bottom: 30,
+    bottom: 50,
     flexDirection: "row",
     justifyContent: "space-between",
     width: "100%",
@@ -561,6 +605,16 @@ const styles = StyleSheet.create({
   },
   disabledButton: {
     backgroundColor: "#9ca3af",
+  },
+  imageWrapper: {
+    width: "100%",
+    height: 700,
+    justifyContent: "center",
+    alignItems: "center",
+    overflow: "hidden",
+    backgroundColor: "rgba(97, 97, 97, 0.2)", 
+    marginVertical: 10,
+    borderRadius: 8,
   },
 });
 
