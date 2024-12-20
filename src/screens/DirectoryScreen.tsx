@@ -272,7 +272,7 @@ const styles = StyleSheet.create({
   },
   medicineImage: {
     width: "100%",
-    height: 350,
+    height: 100,
     borderTopLeftRadius: 10,
     borderTopRightRadius: 10,
   },

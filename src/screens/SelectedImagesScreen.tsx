@@ -81,7 +81,7 @@ const SelectedImagesScreen: React.FC<SelectedImagesScreenProps> = ({
         </TouchableOpacity>
 
         <TouchableOpacity onPress={rotateImage} style={styles.rotateButton}>
-          <Ionicons name="refresh" size={20} color="#fff" />
+          <Ionicons name="refresh-circle" size={35} color="#fff" />
         </TouchableOpacity>
       </View>
 
