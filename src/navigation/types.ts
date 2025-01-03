@@ -15,7 +15,6 @@ export type Doctor = {
   specialty: string;  // Added specialty
   address: string;
   phoneNumber: string;  // Changed from phone to phoneNumber for consistency
-  image: string;
   medicines?: Medicine[];  // Optional array of associated medicines
 };
 

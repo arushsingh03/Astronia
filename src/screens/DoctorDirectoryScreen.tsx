@@ -5,7 +5,6 @@ import {
   StyleSheet,
   FlatList,
   TouchableOpacity,
-  Image,
   TextInput,
   Alert,
   Modal,
@@ -14,7 +13,6 @@ import {
   ScrollView,
   Dimensions,
 } from "react-native";
-import * as ImagePicker from "expo-image-picker";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -64,13 +62,7 @@ const DoctorDirectoryScreen: React.FC = () => {
     saveDoctors(updatedDoctors);
   };
 
-  const pickImage = async () => {
-    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (status !== "granted") {
-      Alert.alert("Permission Needed", "Please allow access to your photos.");
-      return;
-    }
-
+  const addDoctor = () => {
     // Validate input fields
     if (!doctorName.trim()) {
       Alert.alert("Error", "Please enter doctor's name");
@@ -89,37 +81,28 @@ const DoctorDirectoryScreen: React.FC = () => {
       return;
     }
 
-    let result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      quality: 1,
-    });
+    const newDoctor: Doctor = {
+      id: Date.now().toString(),
+      name: doctorName.trim(),
+      specialty: specialty.trim(),
+      address: address.trim(),
+      phoneNumber: phoneNumber.trim(),
+      medicines: [],
+    };
 
-    if (!result.canceled) {
-      const newDoctor: Doctor = {
-        id: Date.now().toString(),
-        name: doctorName.trim(),
-        specialty: specialty.trim(),
-        address: address.trim(),
-        phoneNumber: phoneNumber.trim(),
-        image: result.assets[0].uri,
-        medicines: [], // Initialize with empty medicines array
-      };
+    const updatedDoctors = [...doctors, newDoctor].sort((a, b) =>
+      a.name.localeCompare(b.name)
+    );
 
-      const updatedDoctors = [...doctors, newDoctor].sort((a, b) =>
-        a.name.localeCompare(b.name)
-      );
+    setDoctors(updatedDoctors);
+    saveDoctors(updatedDoctors);
 
-      setDoctors(updatedDoctors);
-      saveDoctors(updatedDoctors);
-
-      // Reset form
-      setDoctorName("");
-      setSpecialty("");
-      setAddress("");
-      setPhoneNumber("");
-      setIsModalVisible(false);
-    }
+    // Reset form
+    setDoctorName("");
+    setSpecialty("");
+    setAddress("");
+    setPhoneNumber("");
+    setIsModalVisible(false);
   };
 
   const filteredDoctors = doctors.filter((doctor) =>
@@ -131,7 +114,6 @@ const DoctorDirectoryScreen: React.FC = () => {
       style={styles.gridItem}
       onPress={() => navigation.navigate("DoctorDetails", { doctor: item })}
     >
-      <Image source={{ uri: item.image }} style={styles.doctorImage} />
       <View style={styles.doctorInfo}>
         <Text style={styles.doctorName} numberOfLines={1}>
           {item.name}
@@ -237,9 +219,9 @@ const DoctorDirectoryScreen: React.FC = () => {
                   />
                   <TouchableOpacity
                     style={styles.modalButton}
-                    onPress={pickImage}
+                    onPress={addDoctor}
                   >
-                    <Text style={styles.modalButtonText}>Pick Image</Text>
+                    <Text style={styles.modalButtonText}>Add Doctor</Text>
                   </TouchableOpacity>
                   <TouchableOpacity
                     style={[styles.modalButton, styles.cancelButton]}
@@ -303,12 +285,6 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     elevation: 3,
     padding: 8,
-  },
-  doctorImage: {
-    width: "100%",
-    height: 350,
-    borderRadius: 10,
-    marginBottom: 8,
   },
   doctorInfo: {
     paddingHorizontal: 5,
